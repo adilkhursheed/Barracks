@@ -12,7 +12,15 @@ interface TeamsTableProps {
   onToggleStatus: (id: string, status: AllocationStatus) => void;
 }
 
-const TeamsTable: React.FC<TeamsTableProps> = ({ teams, assignments, employees, canEdit, onEdit, onView, onToggleStatus }) => {
+const TeamsTable: React.FC<TeamsTableProps> = ({ 
+  teams = [], 
+  assignments = [], 
+  employees = [], 
+  canEdit, 
+  onEdit, 
+  onView, 
+  onToggleStatus 
+}) => {
   return (
     <div className="bg-white rounded-[24px] overflow-hidden border border-slate-100 shadow-sm">
       <div className="overflow-x-auto">
@@ -46,7 +54,7 @@ const TeamsTable: React.FC<TeamsTableProps> = ({ teams, assignments, employees, 
                     <div className="flex -space-x-1.5">
                       {members.slice(0, 3).map((m, i) => (
                         <div key={i} className="w-5 h-5 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[7px] font-bold text-slate-400">
-                          {employees.find(e => e.id === m.employeeId)?.firstName.charAt(0)}
+                          {employees.find(e => e.id === m.employeeId)?.firstName?.charAt(0) || '?'}
                         </div>
                       ))}
                       {members.length > 3 && <div className="w-5 h-5 rounded-full border-2 border-white bg-indigo-50 flex items-center justify-center text-[7px] font-bold text-indigo-600">+{members.length - 3}</div>}
