@@ -1,0 +1,4 @@
+# Azure App Service startup command
+npm install --production
+npm run build
+node server.js

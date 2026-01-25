@@ -32,6 +32,7 @@ jobs:
             dist
             package.json
             server.js
+            web.config
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,6 +51,11 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'barracks-management' # Replace with your Azure Web App name
+          app-name: 'lts-employeeportal' # Updated to match deploy script
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .
+        env:
+          COSMOS_DB_ENDPOINT: ${{ secrets.COSMOS_DB_ENDPOINT }}
+          COSMOS_DB_KEY: ${{ secrets.COSMOS_DB_KEY }}
+          COSMOS_DB_DATABASE_ID: ${{ secrets.COSMOS_DB_DATABASE_ID }}
+          COSMOS_DB_CONTAINER_ID: ${{ secrets.COSMOS_DB_CONTAINER_ID }}
