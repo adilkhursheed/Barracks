@@ -54,32 +54,3 @@ jobs:
           app-name: 'lts-employeeportal'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: '.'
-      
-      - name: Configure App Settings
-        uses: azure/appservice-settings@v1
-        with:
-          app-name: 'lts-employeeportal'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          app-settings-json: |
-            [
-              {
-                "name": "COSMOS_DB_ENDPOINT",
-                "value": "${{ secrets.COSMOS_DB_ENDPOINT }}"
-              },
-              {
-                "name": "COSMOS_DB_KEY",
-                "value": "${{ secrets.COSMOS_DB_KEY }}"
-              },
-              {
-                "name": "COSMOS_DB_DATABASE_ID",
-                "value": "${{ secrets.COSMOS_DB_DATABASE_ID }}"
-              },
-              {
-                "name": "COSMOS_DB_CONTAINER_ID",
-                "value": "${{ secrets.COSMOS_DB_CONTAINER_ID }}"
-              },
-              {
-                "name": "NODE_ENV",
-                "value": "production"
-              }
-            ]

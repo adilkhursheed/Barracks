@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { 
-  Rocket, ArrowLeft, ShieldCheck, CheckCircle2, Search, X, AlertCircle, UsersRound, ArrowRight,
+  Rocket, ArrowLeft, ShieldCheck, CheckCircle2, Search, X, AlertCircle, Users, ArrowRight,
   Target, Zap, UserCog, Clock, ChevronRight, CircleDot, Lock, Check
 } from 'lucide-react';
 import { Employee, TeamAssignment, OnboardingStatus } from '../types';

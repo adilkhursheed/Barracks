@@ -8,7 +8,7 @@ set -e
 echo "🚀 Setting up Azure resources for Barracks Management App..."
 
 # Variables (modify these as needed)
-RESOURCE_GROUP="employeeportal"
+RESOURCE_GROUP="lts-employeeportal_group"
 LOCATION="eastus"
 APP_SERVICE_PLAN="lts-portal-plan"
 WEB_APP_NAME="lts-employeeportal"

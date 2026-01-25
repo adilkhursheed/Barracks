@@ -1,4 +1,4 @@
-name: Deploy to Azure App Service
+name: Deploy to Azure App Service (Fixed)
 
 on:
   push:
@@ -24,6 +24,11 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Install production dependencies only
+        run: |
+          rm -rf node_modules
+          npm ci --production
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -32,6 +37,7 @@ jobs:
             dist
             package.json
             server.js
+            node_modules
             web.config
 
   deploy:
@@ -54,32 +60,3 @@ jobs:
           app-name: 'lts-employeeportal'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: '.'
-      
-      - name: Configure App Settings
-        uses: azure/appservice-settings@v1
-        with:
-          app-name: 'lts-employeeportal'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          app-settings-json: |
-            [
-              {
-                "name": "COSMOS_DB_ENDPOINT",
-                "value": "${{ secrets.COSMOS_DB_ENDPOINT }}"
-              },
-              {
-                "name": "COSMOS_DB_KEY",
-                "value": "${{ secrets.COSMOS_DB_KEY }}"
-              },
-              {
-                "name": "COSMOS_DB_DATABASE_ID",
-                "value": "${{ secrets.COSMOS_DB_DATABASE_ID }}"
-              },
-              {
-                "name": "COSMOS_DB_CONTAINER_ID",
-                "value": "${{ secrets.COSMOS_DB_CONTAINER_ID }}"
-              },
-              {
-                "name": "NODE_ENV",
-                "value": "production"
-              }
-            ]
