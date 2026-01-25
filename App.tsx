@@ -49,6 +49,7 @@ import OnboardingListView from './components/OnboardingListView';
 import Settings from './components/Settings';
 import { EntityModal, ImportModal, AssignmentModal } from './components/Modals';
 import OnboardingWizard from './components/OnboardingWizard';
+import { persistence } from './services/persistence';
 
 interface Toast {
   id: string;
@@ -93,8 +94,6 @@ const Logo = () => (
   </div>
 );
 
-const STORAGE_KEY = 'barracks_v7_final_stable_v3';
-
 const App: React.FC = () => {
   const [currentUserRole] = useState<UserRole>(UserRole.ADMIN);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -117,30 +116,45 @@ const App: React.FC = () => {
   const [assignedDateForModal, setAssignedDateForModal] = useState(new Date().toISOString().split('T')[0]);
   const [endDateForCurrent, setEndDateForCurrent] = useState(new Date().toISOString().split('T')[0]);
 
-  const initialData = useMemo(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error("Load error", e); }
-    }
-    return null;
+  // App initialization state - initialized as empty to prevent hardcoded artifacts
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
+  const [assetAssignments, setAssetAssignments] = useState<AssetAssignment[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
+  // Async data loading from Cosmos DB
+  useEffect(() => {
+    const initData = async () => {
+      const data = await persistence.loadAll();
+      if (data) {
+        if (data.employees) setEmployees(data.employees);
+        if (data.assets) setAssets(data.assets);
+        if (data.teams) setTeams(data.teams);
+        if (data.teamAssignments) setTeamAssignments(data.teamAssignments);
+        if (data.assetAssignments) setAssetAssignments(data.assetAssignments);
+        if (data.auditLogs) setAuditLogs(data.auditLogs);
+      }
+      setIsLoaded(true);
+    };
+    initData();
   }, []);
 
-  const [employees, setEmployees] = useState<Employee[]>(initialData?.employees || INITIAL_EMPLOYEES);
-  const [assets, setAssets] = useState<Asset[]>(initialData?.assets || INITIAL_ASSETS);
-  const [teams, setTeams] = useState<Team[]>(initialData?.teams || INITIAL_TEAMS);
-  const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>(initialData?.teamAssignments || [
-    { id: 'TA001', employeeId: 'EMP001', projectId: 'TEM001', role: 'Lead Architect', startDate: '2023-01-01', status: AllocationStatus.Active },
-    { id: 'TA002', employeeId: 'EMP002', projectId: 'TEM001', role: 'Product Strategist', startDate: '2024-05-01', status: AllocationStatus.Active },
-  ]);
-  const [assetAssignments, setAssetAssignments] = useState<AssetAssignment[]>(initialData?.assetAssignments || [
-    { id: 'AA001', employeeId: 'EMP001', assetId: 'AST001', assignmentDate: '2023-01-01' },
-    { id: 'AA002', employeeId: 'EMP002', assetId: 'AST002', assignmentDate: '2024-05-01' }
-  ]);
-  const [auditLogs] = useState<AuditLog[]>(initialData?.auditLogs || []);
-
+  // Sync state to Cosmos DB on every change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ employees, assets, teams, teamAssignments, assetAssignments, auditLogs }));
-  }, [employees, assets, teams, teamAssignments, assetAssignments, auditLogs]);
+    if (isLoaded) {
+      persistence.saveAll({ employees, assets, teams, teamAssignments, assetAssignments, auditLogs });
+    }
+  }, [employees, assets, teams, teamAssignments, assetAssignments, auditLogs, isLoaded]);
+
+  const currentAssignmentForModal = useMemo(() => {
+    if (modalType === 'assign_project' && modalData) {
+      return teamAssignments.find(ta => ta.employeeId === modalData && ta.status === AllocationStatus.Active);
+    }
+    return null;
+  }, [modalType, modalData, teamAssignments]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -387,6 +401,17 @@ const App: React.FC = () => {
     }
   };
 
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <Logo />
+          <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest animate-pulse">Initializing Barracks...</p>
+        </div>
+      </div>
+    );
+  }
+
   const renderContent = () => {
     if (currentView === 'employee_detail' && selectedEmployeeId) {
       const emp = employees.find(e => e.id === selectedEmployeeId);
@@ -480,13 +505,6 @@ const App: React.FC = () => {
     { id: 'assets', label: 'Assets', icon: <Box size={18} /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
   ];
-
-  const currentAssignmentForModal = useMemo(() => {
-    if (modalType === 'assign_project' && modalData) {
-      return teamAssignments.find(ta => ta.employeeId === modalData && ta.status === AllocationStatus.Active);
-    }
-    return null;
-  }, [modalType, modalData, teamAssignments]);
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">

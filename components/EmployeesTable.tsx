@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, ChevronRight, Terminal } from 'lucide-react';
+import { Edit, ChevronRight, Terminal, User } from 'lucide-react';
 import { Employee, EmploymentStatus } from '../types';
 
 interface EmployeesTableProps {
@@ -11,7 +11,12 @@ interface EmployeesTableProps {
   onReactivate: (id: string) => void;
 }
 
-const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onView, canEdit, onEdit, onDeactivate, onReactivate }) => {
+const EmployeesTable: React.FC<EmployeesTableProps> = ({ 
+  employees = [], 
+  onView, 
+  canEdit, 
+  onEdit 
+}) => {
   return (
     <div className="bg-white rounded-[24px] overflow-hidden border border-slate-100 shadow-sm">
       <div className="overflow-x-auto">
@@ -34,7 +39,7 @@ const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onView, canE
                 <td className="px-6 py-3.5">
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs border group-hover:bg-white group-hover:shadow-sm transition-all ${emp.status === EmploymentStatus.ACTIVE ? 'bg-slate-100 text-slate-500 border-slate-50' : 'bg-rose-50 text-rose-500 border-rose-100'}`}>
-                      {emp.firstName.charAt(0)}
+                      {emp.firstName?.charAt(0) || <User size={14} />}
                     </div>
                     <div>
                       <p className="text-[13px] font-semibold text-slate-900 tracking-tight leading-none">{emp.fullName}</p>

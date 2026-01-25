@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, Edit, Power, Briefcase, Monitor, Mail, 
   Shield, UserCheck, ShieldCheck, UserCircle2, MapPin, 
@@ -7,9 +6,10 @@ import {
   AlertCircle, Fingerprint, IdCard, Calendar, CheckCircle,
   Key, Zap, ShieldAlert, ShieldX, ShieldCheck as ShieldCheckIcon,
   RefreshCw, Info, Coffee, ArrowRight, MinusCircle,
-  LayoutList, Box
+  LayoutList, Box, Sparkles, Wand2
 } from 'lucide-react';
 import { Employee, Asset, EmploymentStatus, AllocationStatus, OnboardingStatus, ElevatedAccess } from '../types';
+import { GoogleGenAI } from "@google/genai";
 
 interface EmployeeDetailProps {
   employee: Employee;
@@ -31,8 +31,8 @@ interface EmployeeDetailProps {
 
 const EmployeeDetail: React.FC<EmployeeDetailProps> = ({ 
   employee, 
-  assets, 
-  projects, 
+  assets = [], 
+  projects = [], 
   onBack, 
   canEdit, 
   onUpdate, 
@@ -43,6 +43,35 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
   onAssignProject,
   onEndProject,
 }) => {
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleAiAnalysis = async () => {
+    setIsAnalyzing(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const prompt = `Analyze this employee profile for project fit and skill growth:
+        Name: ${employee.fullName}
+        Designation: ${employee.designation}
+        Skills: ${employee.skillsets.join(', ')}
+        Current Project: ${projects.find(p => p.status === AllocationStatus.Active)?.projectName || 'Bench'}
+        Past Projects: ${projects.filter(p => p.status === AllocationStatus.COMPLETED).map(p => p.projectName).join(', ')}
+        
+        Provide a concise 3-sentence summary of their "Strategic Value" and "Growth Path".`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+      });
+      setAiAnalysis(response.text || "Analysis failed to generate.");
+    } catch (err) {
+      console.error(err);
+      setAiAnalysis("AI Engine Unavailable.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const activeAssignment = projects.find(p => p.status === AllocationStatus.Active);
   const isBench = !activeAssignment && employee.status === EmploymentStatus.ACTIVE;
 
@@ -216,7 +245,7 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
                   ? (isBench ? 'bg-amber-50 text-amber-600' : 'bg-blue-600 text-white') 
                   : 'bg-slate-50 text-slate-300'
               }`}>
-                {employee.firstName.charAt(0)}
+                {employee.firstName?.charAt(0)}
               </div>
               
               <div className="space-y-1">
@@ -263,6 +292,45 @@ const EmployeeDetail: React.FC<EmployeeDetailProps> = ({
               <InfoBlock icon={Fingerprint} label="Background ID" value={employee.bgvIdString} color="emerald" />
               <InfoBlock icon={MapPin} label="Office Location" value={employee.location} color="blue" />
             </div>
+          </div>
+
+          {/* AI Insights Section */}
+          <div className="bg-slate-900 rounded-[28px] p-6 text-white shadow-xl shadow-slate-900/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <Sparkles size={48} />
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Wand2 size={16} />
+              </div>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Strategic AI Insight</h4>
+            </div>
+            
+            {aiAnalysis ? (
+              <div className="space-y-4 animate-in fade-in duration-500">
+                <p className="text-[11px] font-medium leading-relaxed text-slate-300">
+                  {aiAnalysis}
+                </p>
+                <button 
+                  onClick={() => setAiAnalysis(null)} 
+                  className="text-[9px] font-black text-blue-400 uppercase tracking-widest hover:text-white"
+                >
+                  Clear Analysis
+                </button>
+              </div>
+            ) : (
+              <div className="py-4">
+                <p className="text-[10px] text-slate-500 mb-4 font-medium italic">Generate a strategic profile summary based on project history and skill graph.</p>
+                <button 
+                  onClick={handleAiAnalysis}
+                  disabled={isAnalyzing}
+                  className="w-full py-3 bg-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                >
+                  {isAnalyzing ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                  {isAnalyzing ? 'Processing...' : 'Generate Insight'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
