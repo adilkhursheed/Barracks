@@ -15,7 +15,7 @@ import {
   UserCog,
   UserPlus,
   FileUp,
-  UsersRound,
+  Users,
   ArrowUpRight,
   Monitor,
   ShieldAlert,

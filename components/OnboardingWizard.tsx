@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   X, User, Mail, Rocket, Check, ArrowRight, ArrowLeft,
-  Laptop, ShieldCheck, Box, MapPin, UserCog, BriefcaseBusiness,
+  Laptop, ShieldCheck, Box, MapPin, UserCog, Briefcase,
   Key, CreditCard, MinusCircle, Monitor, Search, ChevronDown, Clock,
   UserCheck, Shield, Package, LayoutList
 } from 'lucide-react';
@@ -192,7 +192,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ assets, projects, o
         <div className="space-y-1">
           <label className={labelClass}>Personnel Role</label>
           <div className="relative">
-            <BriefcaseBusiness className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
+            <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
             <input required type="text" placeholder="e.g. Technical SME" value={projectAssignment.role} className={`${inputClass} pl-10`} onChange={e => setProjectAssignment({...projectAssignment, role: e.target.value})} />
           </div>
         </div>

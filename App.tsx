@@ -11,7 +11,7 @@ import {
   Box,
   Layout,
   Rocket,
-  UsersRound,
+  Users,
   Plus,
   Upload,
   ChevronDown,
@@ -500,7 +500,7 @@ const App: React.FC = () => {
   const navItems = [
     { id: 'dashboard', label: 'Overview', icon: <LayoutGrid size={18} /> },
     { id: 'onboardings', label: 'Onboarding', icon: <Rocket size={18} />, badge: employees.filter(e => e.onboarding && Object.values(e.onboarding).filter(Boolean).length < 8).length },
-    { id: 'employees', label: 'People', icon: <UsersRound size={18} /> },
+    { id: 'employees', label: 'People', icon: <Users size={18} /> },
     { id: 'teams', label: 'Teams', icon: <Layout size={18} /> },
     { id: 'assets', label: 'Assets', icon: <Box size={18} /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
