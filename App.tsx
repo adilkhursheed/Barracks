@@ -119,6 +119,7 @@ const App: React.FC = () => {
 
   // App initialization state - initialized as empty to prevent hardcoded artifacts
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -132,7 +133,7 @@ const App: React.FC = () => {
       const data = await persistence.loadAll();
       
       // If Cosmos DB returns data, use it; otherwise initialize with empty arrays
-      if (data) {
+      if (data && typeof data === 'object') {
         setEmployees(data.employees || []);
         setAssets(data.assets || []);
         setTeams(data.teams || []);
@@ -145,39 +146,40 @@ const App: React.FC = () => {
           teams: data.teams?.length || 0
         });
       } else {
-        // Initialize with empty state and save to Cosmos DB
-        const emptyState = {
-          employees: [],
-          assets: [],
-          teams: [],
-          teamAssignments: [],
-          assetAssignments: [],
-          auditLogs: []
-        };
-        
+        // Only initialize if truly no data exists
+        console.log('?? No existing data - ready for seeding or manual entry');
         setEmployees([]);
         setAssets([]);
         setTeams([]);
         setTeamAssignments([]);
         setAssetAssignments([]);
         setAuditLogs([]);
-        
-        // Save empty state to Cosmos DB to initialize the container
-        await persistence.saveAll(emptyState);
-        console.log('?? Initialized empty registry in Cosmos DB');
       }
       
       setIsLoaded(true);
+      // Allow saves to happen after initial load completes
+      setTimeout(() => setIsInitialLoad(false), 100);
     };
     initData();
   }, []);
 
-  // Sync state to Cosmos DB on every change
+  // Sync state to Cosmos DB on every change (but NOT during initial load)
   useEffect(() => {
-    if (isLoaded) {
-      persistence.saveAll({ employees, assets, teams, teamAssignments, assetAssignments, auditLogs });
+    if (isLoaded && !isInitialLoad) {
+      const saveData = async () => {
+        await persistence.saveAll({ 
+          employees, 
+          assets, 
+          teams, 
+          teamAssignments, 
+          assetAssignments, 
+          auditLogs 
+        });
+        console.log('?? Data synced to Cosmos DB');
+      };
+      saveData();
     }
-  }, [employees, assets, teams, teamAssignments, assetAssignments, auditLogs, isLoaded]);
+  }, [employees, assets, teams, teamAssignments, assetAssignments, auditLogs, isLoaded, isInitialLoad]);
 
   const currentAssignmentForModal = useMemo(() => {
     if (modalType === 'assign_project' && modalData) {
@@ -311,24 +313,15 @@ const App: React.FC = () => {
     try {
       const seedData = generateSeedData();
       
-      setEmployees(seedData.employees);
-      setAssets(seedData.assets);
-      setTeams(seedData.teams);
-      setTeamAssignments(seedData.teamAssignments);
-      setAssetAssignments(seedData.assetAssignments);
-      setAuditLogs(seedData.auditLogs);
+      // ? APPEND seed data to existing data instead of replacing
+      setEmployees(prev => [...prev, ...seedData.employees]);
+      setAssets(prev => [...prev, ...seedData.assets]);
+      setTeams(prev => [...prev, ...seedData.teams]);
+      setTeamAssignments(prev => [...prev, ...seedData.teamAssignments]);
+      setAssetAssignments(prev => [...prev, ...seedData.assetAssignments]);
+      setAuditLogs(prev => [...prev, ...seedData.auditLogs]);
       
-      // Save to Cosmos DB
-      await persistence.saveAll({
-        employees: seedData.employees,
-        assets: seedData.assets,
-        teams: seedData.teams,
-        teamAssignments: seedData.teamAssignments,
-        assetAssignments: seedData.assetAssignments,
-        auditLogs: seedData.auditLogs
-      });
-      
-      showToast(`Seeded ${seedData.employees.length} employees, ${seedData.assets.length} assets, and ${seedData.teams.length} teams`, 'success');
+      showToast(`Added ${seedData.employees.length} employees, ${seedData.assets.length} assets, and ${seedData.teams.length} teams`, 'success');
       
       // Navigate to dashboard to see the data
       setCurrentView('dashboard');
