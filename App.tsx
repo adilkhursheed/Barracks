@@ -50,6 +50,7 @@ import Settings from './components/Settings';
 import { EntityModal, ImportModal, AssignmentModal } from './components/Modals';
 import OnboardingWizard from './components/OnboardingWizard';
 import { persistence } from './services/persistence';
+import { generateSeedData } from './utils/seedData';
 
 interface Toast {
   id: string;
@@ -129,14 +130,43 @@ const App: React.FC = () => {
   useEffect(() => {
     const initData = async () => {
       const data = await persistence.loadAll();
+      
+      // If Cosmos DB returns data, use it; otherwise initialize with empty arrays
       if (data) {
-        if (data.employees) setEmployees(data.employees);
-        if (data.assets) setAssets(data.assets);
-        if (data.teams) setTeams(data.teams);
-        if (data.teamAssignments) setTeamAssignments(data.teamAssignments);
-        if (data.assetAssignments) setAssetAssignments(data.assetAssignments);
-        if (data.auditLogs) setAuditLogs(data.auditLogs);
+        setEmployees(data.employees || []);
+        setAssets(data.assets || []);
+        setTeams(data.teams || []);
+        setTeamAssignments(data.teamAssignments || []);
+        setAssetAssignments(data.assetAssignments || []);
+        setAuditLogs(data.auditLogs || []);
+        console.log('?? Data loaded from Cosmos DB:', {
+          employees: data.employees?.length || 0,
+          assets: data.assets?.length || 0,
+          teams: data.teams?.length || 0
+        });
+      } else {
+        // Initialize with empty state and save to Cosmos DB
+        const emptyState = {
+          employees: [],
+          assets: [],
+          teams: [],
+          teamAssignments: [],
+          assetAssignments: [],
+          auditLogs: []
+        };
+        
+        setEmployees([]);
+        setAssets([]);
+        setTeams([]);
+        setTeamAssignments([]);
+        setAssetAssignments([]);
+        setAuditLogs([]);
+        
+        // Save empty state to Cosmos DB to initialize the container
+        await persistence.saveAll(emptyState);
+        console.log('?? Initialized empty registry in Cosmos DB');
       }
+      
       setIsLoaded(true);
     };
     initData();
@@ -275,6 +305,37 @@ const App: React.FC = () => {
       version: (e.version || 0) + 1 
     } : e));
     showToast("Personnel record reactivated.");
+  };
+
+  const handleSeedDatabase = async () => {
+    try {
+      const seedData = generateSeedData();
+      
+      setEmployees(seedData.employees);
+      setAssets(seedData.assets);
+      setTeams(seedData.teams);
+      setTeamAssignments(seedData.teamAssignments);
+      setAssetAssignments(seedData.assetAssignments);
+      setAuditLogs(seedData.auditLogs);
+      
+      // Save to Cosmos DB
+      await persistence.saveAll({
+        employees: seedData.employees,
+        assets: seedData.assets,
+        teams: seedData.teams,
+        teamAssignments: seedData.teamAssignments,
+        assetAssignments: seedData.assetAssignments,
+        auditLogs: seedData.auditLogs
+      });
+      
+      showToast(`Seeded ${seedData.employees.length} employees, ${seedData.assets.length} assets, and ${seedData.teams.length} teams`, 'success');
+      
+      // Navigate to dashboard to see the data
+      setCurrentView('dashboard');
+    } catch (error) {
+      console.error('Seed error:', error);
+      showToast('Failed to seed database', 'error');
+    }
   };
 
   const handleViewEmployee = (id: string) => { setSelectedEmployeeId(id); setCurrentView('employee_detail'); };
@@ -492,7 +553,7 @@ const App: React.FC = () => {
           <AssetsTable assets={assets} assignments={assetAssignments} employees={employees} canEdit={canEdit} onView={handleViewAsset} onEdit={(a) => { setModalData(a); setModalType('asset'); }} onDelete={() => {}} />
         </div>
       );
-      case 'settings': return <Settings />;
+      case 'settings': return <Settings onSeedData={handleSeedDatabase} />;
       default: return null;
     }
   };

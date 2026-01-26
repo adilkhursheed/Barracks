@@ -1,15 +1,20 @@
 
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Shield, Database, Cloud, HardDrive, RefreshCw, CheckCircle2, AlertCircle, Lock, Globe } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Database, Cloud, HardDrive, RefreshCw, CheckCircle2, AlertCircle, Lock, Globe, Sparkles } from 'lucide-react';
 import { persistence } from '../services/persistence';
 import { ENV } from '../env';
 
-const Settings: React.FC = () => {
-  const [cloudEnabled, setCloudEnabled] = useState(persistence.isCloudMode());
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const config = persistence.getConfig();
+interface SettingsProps {
+  onSeedData?: () => void;
+}
+
+const Settings: React.FC<SettingsProps> = ({ onSeedData }) => {
+const [cloudEnabled, setCloudEnabled] = useState(persistence.isCloudMode());
+const [isTesting, setIsTesting] = useState(false);
+const [isSeeding, setIsSeeding] = useState(false);
+const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+const [errorMessage, setErrorMessage] = useState<string | null>(null);
+const config = persistence.getConfig();
 
   // The current window origin to be used for Azure CORS configuration
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '---';
@@ -32,6 +37,26 @@ const Settings: React.FC = () => {
       setErrorMessage(persistence.lastError);
     }
     setIsTesting(false);
+  };
+
+  const handleSeedDatabase = async () => {
+    if (!confirm('This will populate the database with sample data. Continue?')) {
+      return;
+    }
+    
+    setIsSeeding(true);
+    try {
+      if (onSeedData) {
+        await onSeedData();
+        setTestResult('success');
+        setErrorMessage('Sample data loaded successfully!');
+      }
+    } catch (error) {
+      setTestResult('error');
+      setErrorMessage('Failed to seed database');
+    } finally {
+      setIsSeeding(false);
+    }
   };
 
   return (
@@ -142,13 +167,26 @@ const Settings: React.FC = () => {
             <button 
               onClick={handleTestConnection}
               disabled={isTesting}
-              className={`mt-6 w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+              className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                 isTesting ? 'bg-slate-100 text-slate-400' : 'bg-slate-900 text-white hover:bg-slate-800'
               }`}
             >
               {isTesting ? <RefreshCw size={14} className="animate-spin" /> : <Shield size={14} />}
               {isTesting ? 'Testing Link...' : 'Verify Connectivity'}
             </button>
+
+            {onSeedData && (
+              <button 
+                onClick={handleSeedDatabase}
+                disabled={isSeeding}
+                className={`mt-3 w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                  isSeeding ? 'bg-emerald-100 text-emerald-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                }`}
+              >
+                {isSeeding ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {isSeeding ? 'Seeding Data...' : 'Seed Sample Data'}
+              </button>
+            )}
           </div>
         )}
       </div>
