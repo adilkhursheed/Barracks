@@ -11,7 +11,7 @@
 // Diagnostic logging (safe - won't expose full key)
 console.log('🔍 Cosmos DB Environment Check:');
 console.log('  Endpoint:', ENV.COSMOS.endpoint);
-console.log('  Key Present:', !!ENV.COSMOS.key, `(${ENV.COSMOS.key?.length || 0} chars)`);
+console.log('  Key Present:',`(${ENV.COSMOS.key?.length || 0} chars)`);
 console.log('  Database:', ENV.COSMOS.databaseId);
 console.log('  Container:', ENV.COSMOS.containerId);
 
