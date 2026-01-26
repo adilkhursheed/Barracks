@@ -34,7 +34,6 @@ jobs:
             package-lock.json
             server.js
             web.config
-            .deployment
 
   deploy:
     runs-on: ubuntu-latest
