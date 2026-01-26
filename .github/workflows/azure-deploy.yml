@@ -51,14 +51,14 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'lts-employeeportal'
+          app-name: 'lts-employeeportal-int'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: '.'
       
       - name: Configure App Settings
         uses: azure/appservice-settings@v1
         with:
-          app-name: 'lts-employeeportal'
+          app-name: 'lts-employeeportal-int'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           app-settings-json: |
             [
