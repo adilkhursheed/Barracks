@@ -119,7 +119,7 @@ const App: React.FC = () => {
 
   // App initialization state - initialized as empty to prevent hardcoded artifacts
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const hasCompletedInitialLoad = useRef(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -130,21 +130,33 @@ const App: React.FC = () => {
   // Async data loading from Cosmos DB
   useEffect(() => {
     const initData = async () => {
+      console.log('?? Loading data from Cosmos DB...');
       const data = await persistence.loadAll();
       
       // If Cosmos DB returns data, use it; otherwise initialize with empty arrays
       if (data && typeof data === 'object') {
-        setEmployees(data.employees || []);
-        setAssets(data.assets || []);
-        setTeams(data.teams || []);
-        setTeamAssignments(data.teamAssignments || []);
-        setAssetAssignments(data.assetAssignments || []);
-        setAuditLogs(data.auditLogs || []);
+        const empData = data.employees || [];
+        const assData = data.assets || [];
+        const teamData = data.teams || [];
+        const taData = data.teamAssignments || [];
+        const aaData = data.assetAssignments || [];
+        const auditData = data.auditLogs || [];
+        
+        setEmployees(empData);
+        setAssets(assData);
+        setTeams(teamData);
+        setTeamAssignments(taData);
+        setAssetAssignments(aaData);
+        setAuditLogs(auditData);
+        
         console.log('?? Data loaded from Cosmos DB:', {
-          employees: data.employees?.length || 0,
-          assets: data.assets?.length || 0,
-          teams: data.teams?.length || 0
+          employees: empData.length,
+          assets: assData.length,
+          teams: teamData.length
         });
+        
+        // Mark as having loaded data
+        hasCompletedInitialLoad.current = true;
       } else {
         // Only initialize if truly no data exists
         console.log('?? No existing data - ready for seeding or manual entry');
@@ -154,19 +166,25 @@ const App: React.FC = () => {
         setTeamAssignments([]);
         setAssetAssignments([]);
         setAuditLogs([]);
+        hasCompletedInitialLoad.current = true;
       }
       
       setIsLoaded(true);
-      // Allow saves to happen after initial load completes
-      setTimeout(() => setIsInitialLoad(false), 100);
+      console.log('? Initial load marked complete');
     };
     initData();
   }, []);
 
-  // Sync state to Cosmos DB on every change (but NOT during initial load)
+  // Sync state to Cosmos DB on every change (but ONLY after initial load)
   useEffect(() => {
-    if (isLoaded && !isInitialLoad) {
+    if (isLoaded && hasCompletedInitialLoad.current) {
       const saveData = async () => {
+        console.log('?? Syncing data to Cosmos DB...', {
+          employees: employees.length,
+          assets: assets.length,
+          teams: teams.length
+        });
+        
         await persistence.saveAll({ 
           employees, 
           assets, 
@@ -175,11 +193,15 @@ const App: React.FC = () => {
           assetAssignments, 
           auditLogs 
         });
-        console.log('?? Data synced to Cosmos DB');
+        
+        console.log('? Data synced successfully');
       };
-      saveData();
+      
+      // Small delay to batch multiple rapid state changes
+      const timeoutId = setTimeout(saveData, 300);
+      return () => clearTimeout(timeoutId);
     }
-  }, [employees, assets, teams, teamAssignments, assetAssignments, auditLogs, isLoaded, isInitialLoad]);
+  }, [employees, assets, teams, teamAssignments, assetAssignments, auditLogs, isLoaded]);
 
   const currentAssignmentForModal = useMemo(() => {
     if (modalType === 'assign_project' && modalData) {
