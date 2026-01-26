@@ -4,7 +4,7 @@
 # Run this script after deployment to set up the required environment variables
 
 APP_NAME="lts-employeeportal-int"
-RESOURCE_GROUP="lts-employeeportal-int_group"  # Update with your actual resource group name
+RESOURCE_GROUP="lts-employeeportal_group"  # Update with your actual resource group name
 
 echo "🔧 Configuring Azure App Service settings for $APP_NAME..."
 

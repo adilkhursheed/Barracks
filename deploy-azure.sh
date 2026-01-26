@@ -8,7 +8,7 @@ set -e
 echo "🚀 Setting up Azure resources for Barracks Management App..."
 
 # Variables (modify these as needed)
-RESOURCE_GROUP="lts-employeeportal-int_group"
+RESOURCE_GROUP="lts-employeeportal_group"
 LOCATION="eastus"
 APP_SERVICE_PLAN="lts-portal-plan"
 WEB_APP_NAME="lts-employeeportal-int"
@@ -79,5 +79,5 @@ Next steps:
 # Get the publish profile using Azure CLI
 az webapp deployment list-publishing-profiles \
   --name lts-employeeportal-int \
-  --resource-group lts-employeeportal-int_group \
+  --resource-group lts-employeeportal_group \
   --xml
