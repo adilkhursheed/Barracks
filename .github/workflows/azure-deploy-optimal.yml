@@ -34,7 +34,7 @@ jobs:
             package-lock.json
             server.js
             web.config
-            .startup
+            startup.sh
 
   deploy:
     runs-on: ubuntu-latest
