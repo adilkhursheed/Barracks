@@ -333,6 +333,21 @@ const App: React.FC = () => {
 
   const handleSeedDatabase = async () => {
     try {
+      // Check if seed data already exists
+      const seedEmployeeIds = ['EMP001', 'EMP002', 'EMP003', 'EMP004'];
+      const seedAssetIds = ['AST001', 'AST002', 'AST003', 'AST004', 'AST005'];
+      const seedTeamIds = ['TEAM001', 'TEAM002', 'TEAM003'];
+      
+      const hasExistingEmployees = employees.some(e => seedEmployeeIds.includes(e.id));
+      const hasExistingAssets = assets.some(a => seedAssetIds.includes(a.id));
+      const hasExistingTeams = teams.some(t => seedTeamIds.includes(t.id));
+      
+      if (hasExistingEmployees || hasExistingAssets || hasExistingTeams) {
+        console.warn('?? Seed data already exists, skipping seed operation');
+        showToast('Sample data already exists. Skipping duplicate seed.', 'info');
+        return;
+      }
+      
       const seedData = generateSeedData();
       
       // ? APPEND seed data to existing data instead of replacing
@@ -343,6 +358,7 @@ const App: React.FC = () => {
       setAssetAssignments(prev => [...prev, ...seedData.assetAssignments]);
       setAuditLogs(prev => [...prev, ...seedData.auditLogs]);
       
+      console.log('? Seed data added successfully');
       showToast(`Added ${seedData.employees.length} employees, ${seedData.assets.length} assets, and ${seedData.teams.length} teams`, 'success');
       
       // Navigate to dashboard to see the data
