@@ -150,22 +150,44 @@ export class PersistenceService {
   public async loadAll(): Promise<any> {
     // If CLOUD_SYNC_ENABLED is true, we never use local storage fallbacks
     if (ENV.CLOUD_SYNC_ENABLED) {
-      if (!this.client) await this.initClient();
+      if (!this.client) {
+        console.log("?? Client not initialized, initializing now...");
+        await this.initClient();
+      }
       
       if (this.client && this.config) {
         try {
+          console.log("?? Querying Cosmos DB for registry_state...");
           const container = this.client.database(this.config.databaseId).container(this.config.containerId);
           const { resources } = await container.items.query("SELECT * from c WHERE c.id = 'registry_state'").fetchAll();
+          
+          console.log(`?? Query returned ${resources.length} document(s)`);
+          
           const stateDoc = resources[0];
           
           if (stateDoc && stateDoc.data) {
-            console.log("Cloud Registry loaded successfully (Pure Cloud Mode)");
+            console.log("? Cloud Registry loaded successfully (Pure Cloud Mode)", {
+              hasEmployees: !!stateDoc.data.employees,
+              employeeCount: stateDoc.data.employees?.length || 0,
+              hasAssets: !!stateDoc.data.assets,
+              assetCount: stateDoc.data.assets?.length || 0,
+              hasTeams: !!stateDoc.data.teams,
+              teamCount: stateDoc.data.teams?.length || 0
+            });
             return stateDoc.data;
+          } else if (stateDoc) {
+            console.warn("?? Document found but has no 'data' field:", stateDoc);
+            return null;
+          } else {
+            console.warn("?? No registry_state document found in Cosmos DB");
+            return null;
           }
         } catch (e) {
-          console.error("Cloud Registry unreachable in Pure Cloud Mode", e);
+          console.error("? Cloud Registry unreachable in Pure Cloud Mode", e);
           return null; // Force empty/initial state rather than falling back
         }
+      } else {
+        console.error("? Client or config not available:", { client: !!this.client, config: !!this.config });
       }
       return null;
     }
@@ -210,19 +232,43 @@ export class PersistenceService {
     try {
       // Bypass local storage if cloud is forced
       if (ENV.CLOUD_SYNC_ENABLED) {
-        if (!this.client) await this.initClient();
+        if (!this.client) {
+          console.log("?? Client not initialized for save, initializing now...");
+          await this.initClient();
+        }
         
         if (this.client && this.config) {
           try {
+            console.log("?? Saving to Cosmos DB:", {
+              employees: data.employees?.length || 0,
+              assets: data.assets?.length || 0,
+              teams: data.teams?.length || 0
+            });
+            
             const container = this.client.database(this.config.databaseId).container(this.config.containerId);
-            await container.items.upsert({
+            const result = await container.items.upsert({
               id: 'registry_state',
               data: data,
               lastUpdated: new Date().toISOString()
             });
-          } catch (e) {
-            console.error("Cloud Save failed in Pure Cloud Mode:", e);
+            
+            console.log("? Saved to Cosmos DB successfully", {
+              statusCode: result.statusCode,
+              requestCharge: result.requestCharge
+            });
+          } catch (e: any) {
+            console.error("? Cloud Save failed in Pure Cloud Mode:", e);
+            console.error("Error details:", {
+              message: e.message,
+              code: e.code,
+              statusCode: e.statusCode
+            });
           }
+        } else {
+          console.error("? Cannot save - Client or config not available:", {
+            client: !!this.client,
+            config: !!this.config
+          });
         }
         return;
       }
