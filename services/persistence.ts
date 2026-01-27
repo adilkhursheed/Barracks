@@ -21,6 +21,13 @@ export class PersistenceService {
 
   constructor() {
     this.loadConfigSync();
+    
+    // In pure cloud mode, initialize client immediately
+    if (this.cloudModeEnabled && ENV.CLOUD_SYNC_ENABLED) {
+      this.initClient().catch(err => {
+        console.error("Failed to initialize Cosmos DB client on startup:", err);
+      });
+    }
   }
 
   private loadConfigSync() {
@@ -29,7 +36,7 @@ export class PersistenceService {
       if (ENV.CLOUD_SYNC_ENABLED) {
         this.cloudModeEnabled = true;
         this.config = ENV.COSMOS;
-        console.log("Cloud Persistence Engine: Forced Active (Local Storage Bypassed)");
+        console.log("?? Cloud Persistence Engine: Forced Active (Local Storage Bypassed)");
       } else {
         const savedMode = localStorage.getItem(CLOUD_MODE_KEY);
         this.cloudModeEnabled = savedMode !== null ? savedMode === 'true' : false;
@@ -41,22 +48,30 @@ export class PersistenceService {
           this.config = ENV.COSMOS;
         }
       }
-
-      if (this.cloudModeEnabled) {
-        this.initClient();
-      }
     } catch (e) {
-      console.warn("Config initialization failed:", e);
+      console.warn("?? Config initialization failed:", e);
       this.config = ENV.COSMOS;
     }
   }
 
   private async initClient() {
-    if (!this.config || this.isInitializing || this.client) return;
+    if (!this.config || this.client) return;
     if (!this.config.endpoint || !this.config.key) return;
+    
+    // If already initializing, wait for it to complete
+    if (this.isInitializing) {
+      console.log("? Already initializing, waiting...");
+      // Wait for initialization to complete (max 5 seconds)
+      const startTime = Date.now();
+      while (this.isInitializing && Date.now() - startTime < 5000) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      return;
+    }
 
     this.isInitializing = true;
     try {
+      console.log("?? Initializing Cosmos DB client...");
       const cosmosModule = await import('@azure/cosmos');
       const { CosmosClient, ConnectionMode } = cosmosModule;
       
@@ -69,9 +84,9 @@ export class PersistenceService {
           connectionMode: ConnectionMode.Gateway
         }
       });
-      console.log("Cloud Persistence Engine: Initialized (Gateway Mode)");
+      console.log("? Cloud Persistence Engine: Initialized (Gateway Mode)");
     } catch (e) {
-      console.error("Cloud Persistence Engine: Initialization Error", e);
+      console.error("? Cloud Persistence Engine: Initialization Error", e);
       this.client = null;
     } finally {
       this.isInitializing = false;
