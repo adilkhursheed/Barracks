@@ -66,8 +66,8 @@ Thank you for your interest in contributing to the Barracks Management System! T
    ```
 
 3. **Configure environment**
-   - Copy `.env.example` to `.env.local`
-   - Set your `GEMINI_API_KEY` if using AI features
+   - Copy `.env.example` to `.env`
+   - Set your Azure Cosmos DB credentials if using cloud persistence
 
 4. **Run development server**
    ```bash
