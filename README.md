@@ -37,8 +37,8 @@ A comprehensive employee, asset, and team management system built with React, Ty
 
 3. **Configure environment** (optional)
    ```bash
-   cp .env.example .env.local
-   # Edit .env.local and add your GEMINI_API_KEY and Azure Cosmos DB credentials
+   cp .env.example .env
+   # Edit .env and add your Azure Cosmos DB credentials
    ```
 
 4. **Run the development server**

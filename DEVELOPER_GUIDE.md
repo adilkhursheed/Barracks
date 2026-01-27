@@ -22,7 +22,7 @@ npm start
 ## Project Structure
 
 ```
-/home/runner/work/Barracks/Barracks/
+Barracks/
 ├── components/           # React components
 │   ├── Dashboard.tsx
 │   ├── EmployeesTable.tsx
@@ -90,14 +90,13 @@ Builds the application and starts the Azure-compatible server
 
 ## Environment Variables
 
-Create a `.env.local` file (copy from `.env.example`):
+Create a `.env` file (copy from `.env.example`):
 
 ```env
-GEMINI_API_KEY=your_api_key_here
-VITE_COSMOS_ENDPOINT=your_cosmos_endpoint
-VITE_COSMOS_KEY=your_cosmos_key
-VITE_COSMOS_DATABASE=your_database_name
-VITE_COSMOS_CONTAINER=your_container_name
+COSMOS_DB_ENDPOINT=https://your-cosmos-db.documents.azure.com/
+COSMOS_DB_KEY=your-cosmos-db-key-here
+COSMOS_DB_DATABASE_ID=your_database_name
+COSMOS_DB_CONTAINER_ID=your_container_name
 ```
 
 ## TypeScript Types
