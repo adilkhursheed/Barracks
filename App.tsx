@@ -50,6 +50,7 @@ import Settings from './components/Settings';
 import { EntityModal, ImportModal, AssignmentModal } from './components/Modals';
 import OnboardingWizard from './components/OnboardingWizard';
 import { persistence } from './services/persistence';
+import { generateSeedData } from './utils/seedData';
 
 interface Toast {
   id: string;
@@ -118,6 +119,7 @@ const App: React.FC = () => {
 
   // App initialization state - initialized as empty to prevent hardcoded artifacts
   const [isLoaded, setIsLoaded] = useState(false);
+  const hasCompletedInitialLoad = useRef(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -128,24 +130,76 @@ const App: React.FC = () => {
   // Async data loading from Cosmos DB
   useEffect(() => {
     const initData = async () => {
+      console.log('?? Loading data from Cosmos DB...');
       const data = await persistence.loadAll();
-      if (data) {
-        if (data.employees) setEmployees(data.employees);
-        if (data.assets) setAssets(data.assets);
-        if (data.teams) setTeams(data.teams);
-        if (data.teamAssignments) setTeamAssignments(data.teamAssignments);
-        if (data.assetAssignments) setAssetAssignments(data.assetAssignments);
-        if (data.auditLogs) setAuditLogs(data.auditLogs);
+      
+      // If Cosmos DB returns data, use it; otherwise initialize with empty arrays
+      if (data && typeof data === 'object') {
+        const empData = data.employees || [];
+        const assData = data.assets || [];
+        const teamData = data.teams || [];
+        const taData = data.teamAssignments || [];
+        const aaData = data.assetAssignments || [];
+        const auditData = data.auditLogs || [];
+        
+        setEmployees(empData);
+        setAssets(assData);
+        setTeams(teamData);
+        setTeamAssignments(taData);
+        setAssetAssignments(aaData);
+        setAuditLogs(auditData);
+        
+        console.log('?? Data loaded from Cosmos DB:', {
+          employees: empData.length,
+          assets: assData.length,
+          teams: teamData.length
+        });
+        
+        // Mark as having loaded data
+        hasCompletedInitialLoad.current = true;
+      } else {
+        // Only initialize if truly no data exists
+        console.log('?? No existing data - ready for seeding or manual entry');
+        setEmployees([]);
+        setAssets([]);
+        setTeams([]);
+        setTeamAssignments([]);
+        setAssetAssignments([]);
+        setAuditLogs([]);
+        hasCompletedInitialLoad.current = true;
       }
+      
       setIsLoaded(true);
+      console.log('? Initial load marked complete');
     };
     initData();
   }, []);
 
-  // Sync state to Cosmos DB on every change
+  // Sync state to Cosmos DB on every change (but ONLY after initial load)
   useEffect(() => {
-    if (isLoaded) {
-      persistence.saveAll({ employees, assets, teams, teamAssignments, assetAssignments, auditLogs });
+    if (isLoaded && hasCompletedInitialLoad.current) {
+      const saveData = async () => {
+        console.log('?? Syncing data to Cosmos DB...', {
+          employees: employees.length,
+          assets: assets.length,
+          teams: teams.length
+        });
+        
+        await persistence.saveAll({ 
+          employees, 
+          assets, 
+          teams, 
+          teamAssignments, 
+          assetAssignments, 
+          auditLogs 
+        });
+        
+        console.log('? Data synced successfully');
+      };
+      
+      // Small delay to batch multiple rapid state changes
+      const timeoutId = setTimeout(saveData, 300);
+      return () => clearTimeout(timeoutId);
     }
   }, [employees, assets, teams, teamAssignments, assetAssignments, auditLogs, isLoaded]);
 
@@ -275,6 +329,44 @@ const App: React.FC = () => {
       version: (e.version || 0) + 1 
     } : e));
     showToast("Personnel record reactivated.");
+  };
+
+  const handleSeedDatabase = async () => {
+    try {
+      // Check if seed data already exists
+      const seedEmployeeIds = ['EMP001', 'EMP002', 'EMP003', 'EMP004'];
+      const seedAssetIds = ['AST001', 'AST002', 'AST003', 'AST004', 'AST005'];
+      const seedTeamIds = ['TEAM001', 'TEAM002', 'TEAM003'];
+      
+      const hasExistingEmployees = employees.some(e => seedEmployeeIds.includes(e.id));
+      const hasExistingAssets = assets.some(a => seedAssetIds.includes(a.id));
+      const hasExistingTeams = teams.some(t => seedTeamIds.includes(t.id));
+      
+      if (hasExistingEmployees || hasExistingAssets || hasExistingTeams) {
+        console.warn('?? Seed data already exists, skipping seed operation');
+        showToast('Sample data already exists. Skipping duplicate seed.', 'info');
+        return;
+      }
+      
+      const seedData = generateSeedData();
+      
+      // ? APPEND seed data to existing data instead of replacing
+      setEmployees(prev => [...prev, ...seedData.employees]);
+      setAssets(prev => [...prev, ...seedData.assets]);
+      setTeams(prev => [...prev, ...seedData.teams]);
+      setTeamAssignments(prev => [...prev, ...seedData.teamAssignments]);
+      setAssetAssignments(prev => [...prev, ...seedData.assetAssignments]);
+      setAuditLogs(prev => [...prev, ...seedData.auditLogs]);
+      
+      console.log('? Seed data added successfully');
+      showToast(`Added ${seedData.employees.length} employees, ${seedData.assets.length} assets, and ${seedData.teams.length} teams`, 'success');
+      
+      // Navigate to dashboard to see the data
+      setCurrentView('dashboard');
+    } catch (error) {
+      console.error('Seed error:', error);
+      showToast('Failed to seed database', 'error');
+    }
   };
 
   const handleViewEmployee = (id: string) => { setSelectedEmployeeId(id); setCurrentView('employee_detail'); };
@@ -492,7 +584,7 @@ const App: React.FC = () => {
           <AssetsTable assets={assets} assignments={assetAssignments} employees={employees} canEdit={canEdit} onView={handleViewAsset} onEdit={(a) => { setModalData(a); setModalType('asset'); }} onDelete={() => {}} />
         </div>
       );
-      case 'settings': return <Settings />;
+      case 'settings': return <Settings onSeedData={handleSeedDatabase} />;
       default: return null;
     }
   };

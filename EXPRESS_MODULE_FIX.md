@@ -1,19 +1,19 @@
-# Node.js Module Error Fix - EXPRESS MODULE NOT FOUND
+﻿# Node.js Module Error Fix - EXPRESS MODULE NOT FOUND
 
-## Problem ?
+## Problem ❌
 Your app is failing with this error:
 ```
 Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /home/site/wwwroot/server.js
 ```
 
-## Root Cause ??
+## Root Cause 🔍
 The deployment workflow is not including the `node_modules` folder (production dependencies) in the deployed package. Azure App Service needs these dependencies to run your Express server.
 
-## Solution Options ???
+## Solution Options 🛠️
 
-### Option 1: Use Azure's Built-in Package Installation (Recommended) ?
+### Option 1: Use Azure's Built-in Package Installation (Recommended) ⭐
 
-1. **Add `.deployment` configuration** (? Already created):
+1. **Add `.deployment` configuration** (✅ Already created):
    ```
    [config]
    SCM_DO_BUILD_DURING_DEPLOYMENT=true
@@ -34,7 +34,7 @@ Use the workflow: `.github/workflows/azure-deploy-node-modules-fix.yml`
 - **Pro**: Guaranteed to include all dependencies
 - **Con**: Larger deployment package, slower uploads
 
-## Quick Fix Steps ??
+## Quick Fix Steps 🚀
 
 ### Immediate Action:
 1. **Replace your workflow file** with `.github/workflows/azure-deploy-optimal.yml`
@@ -49,7 +49,7 @@ Use the workflow: `.github/workflows/azure-deploy-node-modules-fix.yml`
 ### Verification:
 1. **Monitor deployment logs** in Azure Portal > Deployment Center
 2. **Check app logs** - the Express error should be gone
-3. **Test your app** at https://lts-employeeportal.azurewebsites.net
+3. **Test your app** at https://lts-employeeportal-int.azurewebsites.net
 
 ## Azure App Service Configuration
 
@@ -61,16 +61,16 @@ Add these settings in Azure Portal > Configuration > Application settings:
 | `ENABLE_ORYX_BUILD` | `true` |
 | `PRE_BUILD_COMMAND` | `npm ci --production` |
 
-## Files Created ?
-- ? `.deployment` - Tells Azure to build during deployment
-- ? `.github/workflows/azure-deploy-optimal.yml` - Fixed workflow (recommended)
-- ? `.github/workflows/azure-deploy-node-modules-fix.yml` - Alternative with node_modules
+## Files Created ✅
+- ✅ `.deployment` - Tells Azure to build during deployment
+- ✅ `.github/workflows/azure-deploy-optimal.yml` - Fixed workflow (recommended)
+- ✅ `.github/workflows/azure-deploy-node-modules-fix.yml` - Alternative with node_modules
 
-## Expected Result ??
+## Expected Result 🎯
 After applying this fix:
-- ? Express module will be found
-- ? Server will start successfully  
-- ? App will be accessible via Azure App Service URL
-- ? All Cosmos DB connections will work
+- ✅ Express module will be found
+- ✅ Server will start successfully  
+- ✅ App will be accessible via Azure App Service URL
+- ✅ All Cosmos DB connections will work
 
-The key insight: Azure App Service can install Node.js dependencies automatically if properly configured! ??
+The key insight: Azure App Service can install Node.js dependencies automatically if properly configured! 🚀

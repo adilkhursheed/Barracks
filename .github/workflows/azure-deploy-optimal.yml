@@ -23,6 +23,11 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          VITE_COSMOS_DB_ENDPOINT: ${{ secrets.COSMOS_DB_ENDPOINT }}
+          VITE_COSMOS_DB_KEY: ${{ secrets.COSMOS_DB_KEY }}
+          VITE_COSMOS_DB_DATABASE_ID: ltshrm
+          VITE_COSMOS_DB_CONTAINER_ID: Registry
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -34,7 +39,7 @@ jobs:
             package-lock.json
             server.js
             web.config
-            .deployment
+            startup.sh
 
   deploy:
     runs-on: ubuntu-latest
@@ -53,6 +58,6 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'lts-employeeportal'
+          app-name: 'lts-employeeportal-int'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: '.'

@@ -1,9 +1,9 @@
-name: Deploy to Azure App Service
+name: Deploy to INT (Optimal)
 
 on:
   push:
     branches:
-      - main
+      - cosmos
   workflow_dispatch:
 
 jobs:
@@ -23,6 +23,11 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          VITE_COSMOS_DB_ENDPOINT: ${{ secrets.COSMOS_DB_ENDPOINT }}
+          VITE_COSMOS_DB_KEY: ${{ secrets.COSMOS_DB_KEY }}
+          VITE_COSMOS_DB_DATABASE_ID: ltshrm
+          VITE_COSMOS_DB_CONTAINER_ID: Registry
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -31,8 +36,10 @@ jobs:
           path: |
             dist
             package.json
+            package-lock.json
             server.js
             web.config
+            startup.sh
 
   deploy:
     runs-on: ubuntu-latest

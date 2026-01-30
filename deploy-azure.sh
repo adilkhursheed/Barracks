@@ -11,7 +11,7 @@ echo "🚀 Setting up Azure resources for Barracks Management App..."
 RESOURCE_GROUP="lts-employeeportal_group"
 LOCATION="eastus"
 APP_SERVICE_PLAN="lts-portal-plan"
-WEB_APP_NAME="lts-employeeportal"
+WEB_APP_NAME="lts-employeeportal-int"
 COSMOSDB_ACCOUNT="employee-db"
 DATABASE_NAME="ltshrm"
 CONTAINER_NAME="Registry"
@@ -66,7 +66,7 @@ COSMOS_DB_ENDPOINT: https://employee-db.documents.azure.com:443/
 COSMOS_DB_DATABASE_ID: ltshrm
 COSMOS_DB_CONTAINER_ID: Registry
 
-Web App URL: https://lts-employeeportal.azurewebsites.net
+Web App URL: https://lts-employeeportal-int.azurewebsites.net
 
 Next steps:
 1. Download publish profile from Azure Portal
@@ -78,6 +78,6 @@ Next steps:
 
 # Get the publish profile using Azure CLI
 az webapp deployment list-publishing-profiles \
-  --name lts-employeeportal \
+  --name lts-employeeportal-int \
   --resource-group lts-employeeportal_group \
   --xml

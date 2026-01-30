@@ -31,7 +31,7 @@ Use the simplified workflow file `azure-deploy-fixed.yml` which removes the prob
    ```
 
 ### Option 2: Configure in Azure Portal
-1. Go to **Azure Portal** > **App Services** > **lts-employeeportal**
+1. Go to **Azure Portal** > **App Services** > **lts-employeeportal-int**
 2. Navigate to **Configuration** > **Application settings**
 3. Add the following settings:
    - `COSMOS_DB_ENDPOINT`: Your Cosmos DB endpoint URL
@@ -59,7 +59,7 @@ After configuring settings, verify your app is working:
 1. **Check app status**: Visit your Azure App Service URL
 2. **View logs**: 
    ```bash
-   az webapp log tail --name lts-employeeportal --resource-group your-resource-group
+   az webapp log tail --name lts-employeeportal-int --resource-group your-resource-group
    ```
 3. **Test API endpoints**: Ensure Cosmos DB connectivity is working
 
